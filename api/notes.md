@@ -1,56 +1,145 @@
-API 
+API Notes
 
-concepts 
-- different types of APIs (REST, SOAP, GraphQL)
-- system design concepts 
-- scalable systems
-- pagination authentication versioning etc
-- API documentation best practices 
+Overview
+- API = Application Program Interface: surface area for communication between software applications.
+- Defines methods and data formats so different systems can interact.
 
-api = application program interface 
-surface area for communication between different software applications
-allows different software systems to interact with each other
-APIs define the methods and data formats that applications can use to communicate with each other
+Core Concepts
+- Different types of APIs (REST, SOAP, GraphQL, gRPC, WebSockets).
+- System design concepts for scalable systems.
+- Pagination, authentication, versioning, etc.
+- API documentation best practices.
 
-types of APIs
-1. REST (Representational State Transfer)
-- architectural style for designing networked applications
-- stateless communication
-- uses standard HTTP methods (GET, POST, PUT, DELETE)
-- resources are identified by URIs
-- commonly uses JSON or XML for data exchange
-- widely used for web services due to its simplicity and scalability
-2. SOAP (Simple Object Access Protocol)
-- protocol for exchanging structured information in web services
-- relies on XML for message format
-- uses various transport protocols (HTTP, SMTP, etc.)
-- more rigid and complex compared to REST
-- supports advanced security features (WS-Security)
-- older and less commonly used than REST
-3. GraphQL
-- query language for APIs and runtime for executing those queries
-- it interact with a backend service to fetch only the data that is requested
-- instead of multiple endpoints, it exposes a single endpoint
-- clients can specify exactly what data they need
-- frontend provides query flexibility and reduces over-fetching or under-fetching of data
-- gaining popularity for modern web and mobile applications
-3. gRPC
-- open-source remote procedure call (RPC) framework developed by Google
-- uses HTTP/2 for transport and Protocol Buffers (protobuf) for serialization
-- protobuf means smaller message sizes and faster serialization/deserialization
-- supports multiple programming languages
-- designed for high-performance and low-latency communication
-- commonly used in microservices architectures
- 5. WebSockets
-- protocol for full-duplex communication channels over a single TCP connection
-- enables real-time communication between client and server
-- commonly used in applications like chat apps, live notifications, and online gaming
-- allows for bi-directional data exchange without the overhead of HTTP requests
-- reduces latency and improves responsiveness in real-time applications
+API Types
+1) REST (Representational State Transfer)
+- Architectural style for networked apps; stateless communication.
+- Uses HTTP methods (GET, POST, PUT, DELETE); resources identified by URIs.
+- Commonly uses JSON or XML; simple and scalable for web services.
 
-Json 
-- lightweight data interchange format
-- easy for humans to read and write
-- easy for machines to parse and generate
-- uses key-value pairs and arrays to represent data structures
-- commonly used in web APIs for data exchange
+2) SOAP (Simple Object Access Protocol)
+- Protocol for structured web service communication; XML message format.
+- Works over multiple transports (HTTP, SMTP, etc.).
+- More rigid/complex than REST; supports WS-Security; older and less common today.
+
+3) GraphQL
+- Query language and runtime for APIs; single endpoint.
+- Clients specify exactly the data needed; reduces over- and under-fetching.
+- Interacts with backends to return only requested fields; popular for modern web/mobile.
+
+4) gRPC
+- Open-source RPC framework (Google); uses HTTP/2 and Protocol Buffers (protobuf).
+- Smaller messages and faster serialization/deserialization.
+- Multi-language support; designed for high-performance, low-latency microservices.
+
+5) WebSockets
+- Full-duplex communication over a single TCP connection.
+- Enables real-time client-server interaction (chat, live notifications, gaming).
+- Bi-directional data without HTTP request overhead; reduces latency.
+
+JSON
+- Lightweight data interchange format.
+- Easy for humans to read/write and for machines to parse/generate.
+- Uses key-value pairs and arrays to model data.
+- Commonly used in web APIs for data exchange.
+
+
+REST API
+
+methods - GET, POST, PUT, DELETE, PATCH
+resources - Endpoints representing data entities ,db records
+
+endpoint - compination of base URL + resource path
+example: https://api.example.com/api/v1/resources 
+
+nesting data - hierarchical representation of related resources
+example: /users/{userId}/posts/{postId}/comments
+
+GET - Retrieve data from server
+- example: GET /users/{userId} - fetch user details
+- response: 200 OK with user data in JSON
+POST - Create new resource on server
+- example: POST /users - create new user
+- request body: JSON with user details
+- response: 201 Created with new user data
+PUT - Update existing resource on server  replaces entire resource
+- example: PUT /users/{userId} - update user details
+- request body: JSON with updated user details
+- response: 200 OK with updated user data
+DELETE - Remove resource from server
+- example: DELETE /users/{userId} - delete user
+- response: 204 No Content
+- indicates successful deletion with no content returned
+PATCH - Partially update existing resource on server selectively changes
+- example: PATCH /users/{userId} - update specific user fields
+- request body: JSON with fields to update
+- response: 200 OK with updated user data
+updates should be idempotent meaning multiple identical requests have same effect as single request
+accidental duplicate requests should not cause unintended changes\
+but if we do post multiple times we will create multiple resources 
+  
+
+nested data vs filtering
+- Nested data: hierarchical representation of related resources
+  - example: /users/{userId}/posts/{postId}/comments
+- Filtering: query parameters to refine results
+  - example: /posts?author={authorId}&date={date}
+  - returns posts by specific author on specific date
+- Both techniques can be combined for complex queries
+- example: /users/{userId}/posts?date={date}
+- returns posts by user on specific date
+- Use nested data for relationships; filtering for specific criteria within resources
+  
+if you have complex access patterns use query parameters to filter data instead of creating deeply nested endpoints
+
+how to pass data to backend
+- Query parameters: appended to URL for filtering/sorting not use for sensitive data
+  - example: /posts?author={authorId}&sort=date
+- Request body: for POST/PUT/PATCH to send data
+  - example: POST /users with JSON body containing user details
+- Headers: metadata like authentication tokens, content type
+- Path parameters: part of URL to identify specific resources
+  - example: /users/{userId}    
+  - used to specify which user to retrieve/update/delet
+
+pagination
+- Techniques to split large datasets into manageable chunks
+1) Limit and Offset
+- limit: number of items to return
+- offset: number of items to skip
+- example: /posts?limit=10&offset=20
+- returns 10 posts starting from the 21st post
+2) Page Numbering
+- page: page number to retrieve
+- per_page: number of items per page
+- example: /posts?page=2&per_page=10
+- returns 10 posts from the 2nd page
+3) Cursor-based Pagination
+- cursor: unique identifier for the last item in the previous page
+- example: /posts?limit=10&cursor={lastPostId}
+- returns next 10 posts after the specified cursor  
+- more efficient for large datasets; avoids issues with data changes between requests
+- choose pagination method based on use case and data size 
+
+api request structure
+<!-- ex with header and all include an api post -->
+example: POST /users
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer {token}
+Body:
+{
+    "name": "John Doe",
+    "email":  ""
+}
+
+status codes
+- 200 OK: Successful GET, PUT, PATCH, DELETE
+- 201 Created: Successful POST creating a resource
+- 204 No Content: Successful DELETE with no content returned
+- 400 Bad Request: Invalid request syntax/parameters
+- 401 Unauthorized: Missing/invalid authentication
+- 403 Forbidden: Authenticated but lacks permission
+- 404 Not Found: Resource not found
+- 500 Internal Server Error: Server-side error
+- 503 Service Unavailable: Server temporarily unavailable
+- Use appropriate status codes to indicate request outcome
