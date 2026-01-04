@@ -112,3 +112,14 @@ async def create_campaign(body: dict[str, str]):
 
     data.append(new)
     return {"campaign": new}
+
+@app.put("/campaigns/{campaign_id}")
+async def update_campaign(campaign_id: int, body: dict[str, str]):
+    """Update an existing campaign by ID."""
+    for campaign in data:
+        if campaign["campaign_id"] == campaign_id:
+            campaign["name"] = body.get("name", campaign["name"])
+            campaign["due_date"] = body.get("due_date", campaign["due_date"])
+            campaign["created_at"] = campaign.get("created_at", campaign["created_at"])
+            return {"campaign": campaign}
+    raise HTTPException(status_code=404, detail="Campaign not found")
