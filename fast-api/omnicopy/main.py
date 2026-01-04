@@ -123,3 +123,12 @@ async def update_campaign(campaign_id: int, body: dict[str, str]):
             campaign["created_at"] = campaign.get("created_at", campaign["created_at"])
             return {"campaign": campaign}
     raise HTTPException(status_code=404, detail="Campaign not found")
+
+@app.delete("/campaigns/{campaign_id}")
+async def delete_campaign(campaign_id: int):
+    """Delete a campaign by ID."""
+    for index, campaign in enumerate(data):
+        if campaign["campaign_id"] == campaign_id:
+            del data[index]
+            return {"message": "Campaign deleted successfully"}
+    raise HTTPException(status_code=404, detail="Campaign not found")
