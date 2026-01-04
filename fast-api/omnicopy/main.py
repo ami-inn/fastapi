@@ -1,6 +1,7 @@
 """FastAPI application for Omnicopy."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+
 
 app = FastAPI(root_path='/api/v1')
 
@@ -85,3 +86,11 @@ async def read_root():
 async def read_campaigns():
     """Return a list of campaigns."""
     return {"campaigns": data}
+
+@app.get("/campaigns/{campaign_id}")
+async def read_campaign(campaign_id: int):
+    """Return a specific campaign by ID."""
+    for campaign in data:
+        if campaign["campaign_id"] == campaign_id:
+            return {"campaign": campaign}
+    raise HTTPException(status_code=404, detail="Campaign not found")
