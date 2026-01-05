@@ -1,12 +1,13 @@
 """FastAPI application for Omnicopy."""
 
-from random import randint
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Generic, TypeVar
 from contextlib import asynccontextmanager
 from sqlmodel import create_engine, SQLModel, Session, select, Field
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
+
+T = TypeVar("T")
 
 
 class Campaign(SQLModel, table=True):
@@ -42,16 +43,18 @@ session_dep = Annotated[Session, Depends(get_session)]
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """Lifespan context manager to create database and tables on startup."""
     create_db_and_tables()
     with Session(engine) as session:
         if not session.exec(select(Campaign)).first():
-            session.add_all([
-                Campaign(name="Summer Launch",due_date=datetime.now()),
-                Campaign(name="Winter Sale",due_date=datetime.now()),
-                Campaign(name="Spring Promotion",due_date=datetime.now()),
-        ])
+            session.add_all(
+                [
+                    Campaign(name="Summer Launch", due_date=datetime.now()),
+                    Campaign(name="Winter Sale", due_date=datetime.now()),
+                    Campaign(name="Spring Promotion", due_date=datetime.now()),
+                ]
+            )
         session.commit()
     yield
 
@@ -189,16 +192,31 @@ data: list[dict[str, str | int]] = [
 #             return {"message": "Campaign deleted successfully"}
 #     raise HTTPException(status_code=404, detail="Campaign not found")
 
-class CampaignsResponse(BaseModel):
-    """Response model for a list of campaigns."""
+# class CampaignsResponse(BaseModel):
+#     """Response model for a list of campaigns."""
 
-    campaigns: list[Campaign]
+#     campaigns: list[Campaign]
 
-@app.get("/campaigns",response_model=CampaignsResponse)
+
+class Response(BaseModel, Generic[T]):
+    data: T
+
+
+@app.get("/campaigns", response_model=Response[list[Campaign]])
 async def read_campaigns(session: session_dep):
     """Return a list of campaigns from the database."""
     campaigns = session.exec(select(Campaign)).all()
-    return {"campaigns": campaigns}
+    return {"data": campaigns}
+
+
+@app.get("/campaigns/{campaign_id}", response_model=Response[Campaign])
+async def read_campaign(campaign_id: int, session: session_dep):
+    """Return a specific campaign by ID from the database."""
+    campaign = session.get(Campaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    return {"data": campaign}
+
 
 @app.post("/campaigns")
 async def create_campaign(campaign: Campaign, session: session_dep):
@@ -206,4 +224,4 @@ async def create_campaign(campaign: Campaign, session: session_dep):
     session.add(campaign)
     session.commit()
     session.refresh(campaign)
-    return {"campaign": campaign}
+    return {"data": campaign}
