@@ -20,3 +20,11 @@ pieces
 -created_at
 
 """
+
+db setup
+orm means object relational mapping
+sqlmodel orm using
+pip install sqlmodel
+pip freeze > requirements.txt to update dependencies
+
+doc https://fastapi.tiangolo.com/tutorial/sql-databases/
