@@ -19,7 +19,11 @@ class Campaign(SQLModel, table=True):
     created_at: datetime | None = Field(
         default_factory=lambda: datetime.now(timezone.utc), nullable=True, index=True
     )
+class CampaignCreate(SQLModel):
+    """Campaign creation model."""
 
+    name: str
+    due_date: datetime | None = None
 
 SQLITE_FILE = "database.db"
 SQLITE_URL = f"sqlite:///{SQLITE_FILE}"
@@ -218,10 +222,34 @@ async def read_campaign(campaign_id: int, session: session_dep):
     return {"data": campaign}
 
 
-@app.post("/campaigns")
-async def create_campaign(campaign: Campaign, session: session_dep):
+@app.post("/campaigns", status_code=201, response_model=Response[Campaign])
+async def create_campaign(campaign: CampaignCreate, session: session_dep):
     """Create a new campaign in the database."""
+    db_campaign = Campaign.model_validate(campaign)
+    session.add(db_campaign)
+    session.commit()
+    session.refresh(db_campaign)
+    return {"data": db_campaign}
+
+@app.put("/campaigns/{campaign_id}", response_model=Response[Campaign])
+async def update_campaign(campaign_id: int, updated_campaign: Campaign, session: session_dep):
+    """Update an existing campaign by ID in the database."""
+    campaign = session.get(Campaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    campaign.name = updated_campaign.name
+    campaign.due_date = updated_campaign.due_date
     session.add(campaign)
     session.commit()
     session.refresh(campaign)
     return {"data": campaign}
+
+@app.delete("/campaigns/{campaign_id}", status_code=204)
+async def delete_campaign(campaign_id: int, session: session_dep):
+    """Delete a campaign by ID from the database."""
+    campaign = session.get(Campaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    session.delete(campaign)
+    session.commit()
+    return None
